@@ -32,6 +32,14 @@ from pycg.processing.cgprocessor import CallGraphProcessor
 from pycg.processing.keyerrprocessor import KeyErrProcessor
 from pycg.processing.postprocessor import PostProcessor
 from pycg.processing.preprocessor import PreProcessor
+# import tracemalloc
+# tracemalloc.start()
+# import signal
+# import time
+
+
+# def timeout_handler(signum, frame):
+#     raise TimeoutError("Function execution timed out")
 
 
 class CallGraphGenerator(object):
@@ -127,7 +135,14 @@ class CallGraphGenerator(object):
 
     def do_pass(self, cls, install_hooks=False, *args, **kwargs):
         modules_analyzed = set()
+        # count = 0
         for entry_point in self.entry_points:
+            # current, peak = tracemalloc.get_traced_memory()
+            # print(entry_point)
+            # print(f"Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+            # print(count, len(self.entry_points))
+            # count += 1
+
             input_pkg = self.package
             input_mod = self._get_mod_name(entry_point, input_pkg)
             input_file = os.path.abspath(entry_point)
@@ -150,7 +165,10 @@ class CallGraphGenerator(object):
                     *args,
                     **kwargs,
                 )
-                processor.analyze()
+                try:
+                    processor.analyze()
+                except Exception as e:
+                    continue
                 modules_analyzed = modules_analyzed.union(
                     processor.get_modules_analyzed()
                 )
@@ -168,8 +186,16 @@ class CallGraphGenerator(object):
             self.class_manager,
             self.module_manager,
         )
+        # timeout_duration =  60 * 30 
+        # signal.signal(signal.SIGALRM, timeout_handler)
+        # signal.alarm(timeout_duration)
+        # try:
+            # Call the complete_definitions function
         self.def_manager.complete_definitions()
-
+        # except TimeoutError:
+        #     print("Execution timed out after 0.5 hours")
+        # finally:
+        #     signal.alarm(0)
         iter_cnt = 0
         while (self.max_iter < 0 or iter_cnt < self.max_iter) and (
             not self.has_converged()
@@ -185,8 +211,16 @@ class CallGraphGenerator(object):
                 self.class_manager,
                 self.module_manager,
             )
-
+            # timeout_duration =  60 * 30 
+            # signal.signal(signal.SIGALRM, timeout_handler)
+            # signal.alarm(timeout_duration)
+            # try:
+                # Call the complete_definitions function
             self.def_manager.complete_definitions()
+            # except TimeoutError:
+            #     print("Execution timed out after 0.5 hours")
+            # finally:
+            #     signal.alarm(0)
             iter_cnt += 1
 
         self.reset_counters()
